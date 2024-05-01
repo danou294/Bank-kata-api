@@ -36,22 +36,26 @@ public class AccountControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(new AccountController(accountService)).build();
     }
 
-    @Test
-    void createAccount_ReturnsCreatedAccountWithGeneratedId() throws Exception {
-        Account createdAccount = new Account(0.0);
-        createdAccount.setAccountId(123456L); // Mocking the generated ID
-        when(accountService.createAccount()).thenReturn(createdAccount);
+  @Test
+void createAccount_ReturnsCreatedAccountWithGeneratedId() throws Exception {
+    Account createdAccount = new Account(0.0, false, 0.0); // Adjusted to match the new constructor signature
+    createdAccount.setAccountId(123456L); // Mocking the generated ID
+    when(accountService.createAccount(0.0, false, 0.0)).thenReturn(createdAccount); // Adjusted to match the new method signature
 
-        mockMvc.perform(post("/api/accounts/create"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accountId").value(123456L)) // Expecting the mocked ID
-                .andExpect(jsonPath("$.balance").value(0.0)); // Expecting initial balance to be 0.0
-    }
+    mockMvc.perform(post("/api/accounts/create")
+            .param("initialBalance", "0.0")
+            .param("autorisationDecouvert", "false")
+            .param("montantAutoriseDecouvert", "0.0"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.accountId").value(123456L)) // Expecting the mocked ID
+            .andExpect(jsonPath("$.balance").value(0.0)); // Expecting initial balance to be 0.0
+}
+
 
     @Test
     void deposit_ReturnsUpdatedAccountAfterDeposit() throws Exception {
         // Mocking the updated account after deposit
-        Account updatedAccount = new Account(100.0);
+        Account updatedAccount = new Account(100.0, false, 0.0); // Adjusted to match the new constructor signature
         updatedAccount.setAccountId(123456L);
         when(accountService.deposit(eq("123456"), any(Double.class))).thenReturn(updatedAccount);
 

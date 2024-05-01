@@ -23,14 +23,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
-        String hashedMotDePasse = passwordEncoder.encode(user.getMotDePasse());
-        user.setMotDePasse(hashedMotDePasse);
+         // Créer un compte par défaut pour l'utilisateur avec un solde initial de 0.0 et sans autorisation de découvert
+    Account account = accountService.createAccount(0.0, false, 0.0);
 
-        // Créer un compte pour l'utilisateur
-        Account account = accountService.createAccount();
-        user.setAccount(account);
+    // Associer le compte créé à l'utilisateur
+    user.setAccount(account);
 
-        return userRepository.save(user);
+    // Enregistrer l'utilisateur dans la base de données
+    return userRepository.save(user);
     }
 
     @Override
@@ -69,6 +69,5 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new Exception("No user found with email " + email));
     }
-
 
 }

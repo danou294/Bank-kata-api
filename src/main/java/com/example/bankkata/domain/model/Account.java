@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Random;
 import java.util.UUID;
 
 @Getter
@@ -25,11 +24,17 @@ public class Account {
 
     private double balance;
 
-    public Account(double balance) {
+    private boolean autorisationDecouvert;
+
+    private double montantAutoriseDecouvert;
+
+    public Account(double balance, boolean autorisationDecouvert, double montantAutoriseDecouvert) {
         if (balance < 0) {
             throw new IllegalArgumentException("Balance cannot be negative");
         }
         this.balance = balance;
+        this.autorisationDecouvert = autorisationDecouvert;
+        this.montantAutoriseDecouvert = montantAutoriseDecouvert;
         this.accountId = generateAccountId();
     }
 
@@ -44,14 +49,31 @@ public class Account {
         this.balance += amount;
     }
 
-    public boolean withdraw(double amount) {
+    public void withdraw(double amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Withdrawal amount must be positive");
         }
-        if (this.balance < amount) {
-            throw new InsufficientFundsException("Insufficient funds for withdrawal");
+
+        System.out.println("Current balance: " + balance);
+        System.out.println("Requested amount: " + amount);
+
+        if (balance >= amount) {
+            balance -= amount;
+        } else {
+            System.out.println("Insufficient balance");
+
+            if (autorisationDecouvert) {
+                double montantTotalDisponible = balance + montantAutoriseDecouvert;
+                System.out.println("Total available amount (balance + authorized overdraft): " + montantTotalDisponible);
+
+                if (montantTotalDisponible >= amount) {
+                    balance -= amount;
+                } else {
+                    throw new InsufficientFundsException("Your overdraft does not allow this withdrawal");
+                }
+            } else {
+                throw new InsufficientFundsException("Insufficient funds for withdrawal");
+            }
         }
-        this.balance -= amount;
-        return true;
     }
 }

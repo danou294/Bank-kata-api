@@ -42,9 +42,9 @@ public class AccountController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Object> createAccount() {
+    public ResponseEntity<Object> createAccount(@RequestParam double initialBalance, @RequestParam boolean autorisationDecouvert, @RequestParam double montantAutoriseDecouvert) {
         try {
-            Account account = accountService.createAccount();
+            Account account = accountService.createAccount(initialBalance, autorisationDecouvert, montantAutoriseDecouvert);
             return ResponseEntity.ok(account);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -1,8 +1,10 @@
 package com.example.bankkata.domaine.service;
 
-import com.example.bankkata.domain.model.User;
+import com.example.bankkata.domain.model.Account;
 import com.example.bankkata.domain.model.Role;
+import com.example.bankkata.domain.model.User;
 import com.example.bankkata.domain.port.UserRepository;
+import com.example.bankkata.domain.service.Account.AccountService;
 import com.example.bankkata.domain.service.User.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ class UserServiceImplTest {
     @Mock
     UserRepository userRepository;
 
+    @Mock
+    AccountService accountService;
+
     @InjectMocks
     UserServiceImpl userService;
 
@@ -36,8 +41,18 @@ class UserServiceImplTest {
         List<Role> roles = Arrays.asList(Role.USER);
         User user = new User("John", "Doe", "motDePasse", "john@example.com", roles);
 
+        // Mocking the creation of an account
+        Account account = new Account(0.0, false, 0.0);
+        when(accountService.createAccount(0.0, false, 0.0)).thenReturn(account);
+
+        // Mocking the saving of the user
         when(userRepository.save(any(User.class))).thenReturn(user);
+
+        // Calling the createUser method
         User createdUser = userService.createUser(user);
+
+        // Verifying the result
+        assertNotNull(createdUser);
         assertEquals(user, createdUser);
     }
 
@@ -50,8 +65,10 @@ class UserServiceImplTest {
         when(userRepository.existsById(user.getId())).thenReturn(true);
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(user);
+
         User updatedUser = userService.updateUser(user);
 
+        assertNotNull(updatedUser);
         assertEquals(user, updatedUser);
     }
 
@@ -60,6 +77,7 @@ class UserServiceImplTest {
         Long userId = 1L;
 
         when(userRepository.existsById(userId)).thenReturn(true);
+
         assertDoesNotThrow(() -> userService.deleteUser(userId));
     }
 
@@ -71,8 +89,10 @@ class UserServiceImplTest {
         user.setId(userId);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
         User retrievedUser = userService.getUserById(userId);
 
+        assertNotNull(retrievedUser);
         assertEquals(user, retrievedUser);
     }
 
@@ -80,12 +100,14 @@ class UserServiceImplTest {
     void testGetAllUsers() {
         List<Role> roles = Arrays.asList(Role.USER);
         List<User> userList = Arrays.asList(
-            new User("John", "Doe", "motDePasse", "john@example.com", roles),
-            new User("Jane", "Doe", "motDePasse", "jane@example.com", roles));
+                new User("John", "Doe", "motDePasse", "john@example.com", roles),
+                new User("Jane", "Doe", "motDePasse", "jane@example.com", roles));
 
         when(userRepository.findAll()).thenReturn(userList);
+
         Iterable<User> allUsers = userService.getAllUsers();
 
+        assertNotNull(allUsers);
         assertEquals(userList, allUsers);
     }
 

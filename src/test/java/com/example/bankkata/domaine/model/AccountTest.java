@@ -1,21 +1,18 @@
-package com.example.bankkata.domaine.model;
+package com.example.bankkata.domain.model;
 
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
-import com.example.bankkata.domain.model.Account;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.matchesPattern;
 
 public class AccountTest {
     private Account account;
 
     @BeforeEach
     void setUp() {
-        account = new Account(1000.0); // Assurez-vous que l'ID du compte correspond au pattern défini.
+        account = new Account(1000.0, true, 500.0); // Crée un compte avec autorisation de découvert
     }
 
     @Test
@@ -37,6 +34,6 @@ public class AccountTest {
 
     @Test
     public void withdraw_insufficientBalance_shouldThrowException() {
-        assertThrows(InsufficientFundsException.class, () -> account.withdraw(1200));
+        assertThrows(InsufficientFundsException.class, () -> account.withdraw(2500)); // Tentative de retrait supérieur au solde autorisé
     }
 }

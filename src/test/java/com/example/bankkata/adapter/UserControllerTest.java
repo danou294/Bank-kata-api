@@ -79,8 +79,7 @@ class UserControllerTest {
             new User("Jane", "Doe", "motDePasse", "jane@example.com", roles)
         );
         when(userService.getAllUsers()).thenReturn(userList);
-        ResponseEntity
-        <Iterable<User>> response = userController.getAllUsers();
+        ResponseEntity<Iterable<User>> response = userController.getAllUsers();
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(userList, response.getBody());
     }

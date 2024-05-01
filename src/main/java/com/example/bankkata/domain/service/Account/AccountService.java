@@ -5,7 +5,7 @@ import com.example.bankkata.domain.model.Account;
 
 public interface AccountService {
 
-    Account createAccount();
+    Account createAccount(double balance, boolean autorisationDecouvert, double montantAutoriseDecouvert);
 
     void deleteAccount(String accountId);
 
@@ -16,6 +16,5 @@ public interface AccountService {
     Iterable<Account> getAllAccounts(); // Ajout de la méthode getAllAccounts()
 
     double getAccountBalance(String accountId); // Ajout de la méthode getAccountBalance
-
 
 }

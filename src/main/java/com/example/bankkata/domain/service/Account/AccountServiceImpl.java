@@ -17,8 +17,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account createAccount() {
-        Account account = new Account(0.0); // Crée un compte avec un solde initial de 0.0
+    public Account createAccount(double initialBalance, boolean autorisationDecouvert, double montantAutoriseDecouvert) {
+        Account account = new Account(initialBalance, autorisationDecouvert, montantAutoriseDecouvert);
         return accountRepository.save(account);
     }
 
@@ -52,11 +52,10 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findAll(); // Utilisation de la méthode findAll() du repository pour obtenir tous les comptes
     }
 
-     @Override
+    @Override
     public double getAccountBalance(String accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found with ID: " + accountId));
         return account.getBalance();
     }
-
 }

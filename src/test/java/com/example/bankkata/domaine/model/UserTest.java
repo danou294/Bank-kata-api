@@ -1,14 +1,15 @@
 package com.example.bankkata.domaine.model;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-
+import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
 import com.example.bankkata.domain.model.Role;
 import com.example.bankkata.domain.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UserTest {
 
@@ -16,8 +17,9 @@ public class UserTest {
 
     @BeforeEach
     void setUp() {
-        // Initie l'utilisateur avec un rôle
+        // Initialise l'utilisateur avec un rôle et crée un nouveau compte associé
         user = new User("John", "Doe", "password", "john@example.com", Arrays.asList(Role.USER));
+        user.setAccount(new Account(0.0, true, 100.0));
     }
 
     @Test
@@ -28,30 +30,39 @@ public class UserTest {
     }
 
     @Test
-void testDeposit() {
-    // Vérifie que le compte associé à l'utilisateur n'est pas null avant de déposer de l'argent
-    assertNotNull(user.getAccount(), "Le compte associé à l'utilisateur ne devrait pas être null");
+    void testDeposit() {
+        // Effectue un dépôt sur le compte associé à l'utilisateur
+        user.getAccount().deposit(50.0);
 
-    // Effectue un dépôt sur le compte associé à l'utilisateur
-    user.getAccount().deposit(50.0);
+        // Vérifie que le solde du compte est correct après le dépôt
+        assertEquals(50.0, user.getAccount().getBalance(), 0.01);
+    }
 
-    // Vérifie que le solde du compte est correct après le dépôt
-    assertEquals(50.0, user.getAccount().getBalance(), 0.01);
-}
+    @Test
+    void testWithdrawSufficientFunds() {
+        // Dépose de l'argent sur le compte associé à l'utilisateur pour s'assurer qu'il a suffisamment de fonds
+        user.getAccount().deposit(100.0);
 
-@Test
-void testWithdrawSufficientFunds() {
-    // Vérifie que le compte associé à l'utilisateur n'est pas null avant de retirer de l'argent
-    assertNotNull(user.getAccount(), "Le compte associé à l'utilisateur ne devrait pas être null");
+        // Vérifie qu'aucune exception n'est lancée lors du retrait avec des fonds suffisants
+        assertDoesNotThrow(() -> {
+            user.getAccount().withdraw(50.0);
+        });
 
-    // Dépose de l'argent sur le compte associé à l'utilisateur pour s'assurer qu'il a suffisamment de fonds
-    user.getAccount().deposit(100.0);
+        // Vérifie que le solde du compte est correct après le retrait
+        assertEquals(50.0, user.getAccount().getBalance(), 0.01);
+    }
 
-    // Effectue un retrait sur le compte associé à l'utilisateur
-    assertTrue(user.getAccount().withdraw(50.0));
+    @Test
+    void testWithdrawInsufficientFunds() {
+        // Dépose de l'argent insuffisant sur le compte associé à l'utilisateur
+        user.getAccount().deposit(30.0);
 
-    // Vérifie que le solde du compte est correct après le retrait
-    assertEquals(50.0, user.getAccount().getBalance(), 0.01);
-}
+        // Vérifie qu'un retrait avec des fonds insuffisants lance une exception
+        assertThrows(InsufficientFundsException.class, () -> {
+            user.getAccount().withdraw(500.0);
+        });
 
+        // Vérifie que le solde du compte est inchangé après un retrait infructueux
+        assertEquals(30.0, user.getAccount().getBalance(), 0.01);
+    }
 }
