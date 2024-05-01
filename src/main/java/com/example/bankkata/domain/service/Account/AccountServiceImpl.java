@@ -1,9 +1,8 @@
-package com.example.bankkata.domaine.service;
+package com.example.bankkata.domain.service.Account;
 
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
 import com.example.bankkata.domain.port.AccountRepository;
-import com.example.bankkata.domain.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +16,20 @@ public class AccountServiceImpl implements AccountService {
         this.accountRepository = accountRepository;
     }
 
-  @Override
-public Account createAccount() {
-    Account account = new Account(0.0); // Crée un compte avec un solde initial de 0.0
-    return accountRepository.save(account);
-}
+    @Override
+    public Account createAccount() {
+        Account account = new Account(0.0); // Crée un compte avec un solde initial de 0.0
+        return accountRepository.save(account);
+    }
+
+    @Override
+    public void deleteAccount(String accountId) {
+        if (accountRepository.existsById(accountId)) {
+            accountRepository.deleteById(accountId);
+        } else {
+            throw new IllegalArgumentException("Account not found with ID: " + accountId);
+        }
+    }
 
     @Override
     public Account deposit(String accountId, double amount) {

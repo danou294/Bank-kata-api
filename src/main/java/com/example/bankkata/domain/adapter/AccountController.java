@@ -2,7 +2,7 @@ package com.example.bankkata.domain.adapter;
 
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
-import com.example.bankkata.domain.service.AccountService;
+import com.example.bankkata.domain.service.Account.AccountService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

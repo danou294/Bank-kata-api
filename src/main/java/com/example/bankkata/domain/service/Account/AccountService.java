@@ -1,4 +1,4 @@
-package com.example.bankkata.domain.service;
+package com.example.bankkata.domain.service.Account;
 
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
@@ -6,6 +6,8 @@ import com.example.bankkata.domain.model.Account;
 public interface AccountService {
 
     Account createAccount();
+
+    void deleteAccount(String accountId);
 
     Account deposit(String accountId, double amount);
 

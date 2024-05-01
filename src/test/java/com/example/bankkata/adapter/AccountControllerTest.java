@@ -1,16 +1,18 @@
 package com.example.bankkata.adapter;
 
 import com.example.bankkata.domain.adapter.AccountController;
-import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
-import com.example.bankkata.domain.service.AccountService;
+import com.example.bankkata.domain.service.Account.AccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -45,4 +47,21 @@ public class AccountControllerTest {
                 .andExpect(jsonPath("$.accountId").value(123456L)) // Expecting the mocked ID
                 .andExpect(jsonPath("$.balance").value(0.0)); // Expecting initial balance to be 0.0
     }
+
+    @Test
+    void deposit_ReturnsUpdatedAccountAfterDeposit() throws Exception {
+        // Mocking the updated account after deposit
+        Account updatedAccount = new Account(100.0);
+        updatedAccount.setAccountId(123456L);
+        when(accountService.deposit(eq("123456"), any(Double.class))).thenReturn(updatedAccount);
+
+        // Perform the deposit request
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/accounts/123456/deposit")
+                .param("amount", "100.0")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.accountId").value(123456L)) // Expected account ID
+                .andExpect(MockMvcResultMatchers.jsonPath("$.balance").value(100.0)); // Expected updated balance
+    }
+
 }

@@ -3,6 +3,7 @@ package com.example.bankkata.domaine.service;
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
 import com.example.bankkata.domain.model.Account;
 import com.example.bankkata.domain.port.AccountRepository;
+import com.example.bankkata.domain.service.Account.AccountServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,7 +22,7 @@ public class AccountServiceTest {
     private AccountRepository accountRepository;
 
     @InjectMocks
-    private com.example.bankkata.domaine.service.AccountServiceImpl accountService;
+    private AccountServiceImpl accountService;
 
     @BeforeEach
     public void setup() {
