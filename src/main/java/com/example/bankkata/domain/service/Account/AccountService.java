@@ -1,20 +1,12 @@
 package com.example.bankkata.domain.service.Account;
 
-import com.example.bankkata.domain.exceptions.InsufficientFundsException;
-import com.example.bankkata.domain.model.Account;
+import com.example.bankkata.domain.model.Operation;
+
+import java.util.List;
 
 public interface AccountService {
-
-    Account createAccount(double balance, boolean autorisationDecouvert, double montantAutoriseDecouvert);
-
-    void deleteAccount(String accountId);
-
-    Account deposit(String accountId, double amount);
-
-    Account withdraw(String accountId, double amount) throws InsufficientFundsException;
-
-    Iterable<Account> getAllAccounts(); // Ajout de la méthode getAllAccounts()
-
-    double getAccountBalance(String accountId); // Ajout de la méthode getAccountBalance
-
+    void deposit(String accountNumber, double amount);
+    void withdraw(String accountNumber, double amount);
+    double getBalance(String accountNumber);
+    List<Operation> getMonthlyStatement(String accountNumber);
 }

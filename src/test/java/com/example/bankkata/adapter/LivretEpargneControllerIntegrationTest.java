@@ -1,70 +1,60 @@
 package com.example.bankkata.adapter;
 
+import com.example.bankkata.BankKataApplication;
+import com.example.bankkata.domain.service.LivretEpargne.LivretEpargneService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(classes = BankKataApplication.class)
 public class LivretEpargneControllerIntegrationTest {
 
     @Autowired
+    private WebApplicationContext webApplicationContext;
+
     private MockMvc mockMvc;
 
+    @MockBean
+    private LivretEpargneService livretEpargneService;
+
     @Test
-    void createLivretEpargne_ShouldReturnCreatedLivretEpargne() throws Exception {
-        double plafondDepot = 1000.0;
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/livrets-epargne/create")
-                .contentType(MediaType.APPLICATION_JSON)
-                .param("plafondDepot", String.valueOf(plafondDepot)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.plafondDepot").value(plafondDepot))
-                .andDo(print());
+    void deposit_ShouldIncreaseBalance() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        String accountNumber = "1";
+        double amount = 50.0;
+
+        mockMvc.perform(post("/livret-epargne/{accountNumber}/deposit", accountNumber)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.valueOf(amount)))
+                .andExpect(status().isOk());
+
+        verify(livretEpargneService, times(1)).deposit(accountNumber, amount);
     }
 
     @Test
-    void getLivretEpargneById_ExistingId_ShouldReturnLivretEpargne() throws Exception {
-        long existingLivretEpargneId = 1L;
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/livrets-epargne/{id}", existingLivretEpargneId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andDo(print());
-    }
+    void getBalance_ShouldReturnCurrentBalance() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
-    @Test
-    void getLivretEpargneById_NonExistingId_ShouldReturnNotFound() throws Exception {
-        long nonExistingLivretEpargneId = 999L;
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/livrets-epargne/{id}", nonExistingLivretEpargneId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isNotFound())
-                .andDo(print());
-    }
+        String accountNumber = "1";
+        double balance = 100.0;
 
-    @Test
-    void updatePlafondDepot_ExistingId_ShouldReturnUpdatedLivretEpargne() throws Exception {
-        long livretEpargneId = 1L;
-        double nouveauPlafond = 3000.0;
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/livrets-epargne/{id}", livretEpargneId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .param("nouveauPlafond", String.valueOf(nouveauPlafond)))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.plafondDepot").value(nouveauPlafond))
-                .andDo(print());
-    }
+        when(livretEpargneService.getBalance(accountNumber)).thenReturn(balance);
 
-    @Test
-    void deleteLivretEpargne_ExistingId_ShouldReturnNoContent() throws Exception {
-        long livretEpargneId = 1L;
-        mockMvc.perform(MockMvcRequestBuilders.delete("/api/livrets-epargne/{id}", livretEpargneId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isNoContent())
-                .andDo(print());
+        mockMvc.perform(get("/livret-epargne/{accountNumber}/balance", accountNumber)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(balance)));
+
+        verify(livretEpargneService, times(1)).getBalance(accountNumber);
     }
 }

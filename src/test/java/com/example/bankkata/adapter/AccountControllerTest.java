@@ -1,71 +1,94 @@
 package com.example.bankkata.adapter;
 
 import com.example.bankkata.domain.adapter.AccountController;
-import com.example.bankkata.domain.model.Account;
+import com.example.bankkata.domain.model.Operation;
 import com.example.bankkata.domain.service.Account.AccountService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 public class AccountControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private AccountService accountService;
+
+    @InjectMocks
+    private AccountController accountController;
+
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new AccountController(accountService)).build();
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(accountController).build();
     }
-
-  @Test
-void createAccount_ReturnsCreatedAccountWithGeneratedId() throws Exception {
-    Account createdAccount = new Account(0.0, false, 0.0); // Adjusted to match the new constructor signature
-    createdAccount.setAccountId(123456L); // Mocking the generated ID
-    when(accountService.createAccount(0.0, false, 0.0)).thenReturn(createdAccount); // Adjusted to match the new method signature
-
-    mockMvc.perform(post("/api/accounts/create")
-            .param("initialBalance", "0.0")
-            .param("autorisationDecouvert", "false")
-            .param("montantAutoriseDecouvert", "0.0"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.accountId").value(123456L)) // Expecting the mocked ID
-            .andExpect(jsonPath("$.balance").value(0.0)); // Expecting initial balance to be 0.0
-}
-
 
     @Test
-    void deposit_ReturnsUpdatedAccountAfterDeposit() throws Exception {
-        // Mocking the updated account after deposit
-        Account updatedAccount = new Account(100.0, false, 0.0); // Adjusted to match the new constructor signature
-        updatedAccount.setAccountId(123456L);
-        when(accountService.deposit(eq("123456"), any(Double.class))).thenReturn(updatedAccount);
+    void deposit_ShouldCallServiceDeposit() throws Exception {
+        String accountNumber = "1";
+        double amount = 100.0;
 
-        // Perform the deposit request
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/accounts/123456/deposit")
-                .param("amount", "100.0")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.accountId").value(123456L)) // Expected account ID
-                .andExpect(MockMvcResultMatchers.jsonPath("$.balance").value(100.0)); // Expected updated balance
+        mockMvc.perform(post("/accounts/{accountNumber}/deposit", accountNumber)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.valueOf(amount)))
+                .andExpect(status().isOk());
+
+        verify(accountService, times(1)).deposit(accountNumber, amount);
     }
 
+    @Test
+    void withdraw_ShouldCallServiceWithdraw() throws Exception {
+        String accountNumber = "1";
+        double amount = 50.0;
+
+        mockMvc.perform(post("/accounts/{accountNumber}/withdraw", accountNumber)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.valueOf(amount)))
+                .andExpect(status().isOk());
+
+        verify(accountService, times(1)).withdraw(accountNumber, amount);
+    }
+
+    @Test
+    void getBalance_ShouldReturnBalance() throws Exception {
+        String accountNumber = "1";
+        double balance = 100.0;
+
+        when(accountService.getBalance(accountNumber)).thenReturn(balance);
+
+        mockMvc.perform(get("/accounts/{accountNumber}/balance", accountNumber))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(balance)));
+
+        verify(accountService, times(1)).getBalance(accountNumber);
+    }
+
+    @Test
+    void getMonthlyStatement_ShouldReturnStatement() throws Exception {
+        String accountNumber = "1";
+        List<Operation> operations = new ArrayList<>();
+        operations.add(new Operation(LocalDateTime.now(), "DEPOSIT", 100.0, 200.0));
+        operations.add(new Operation(LocalDateTime.now(), "WITHDRAW", 50.0, 150.0));
+
+        when(accountService.getMonthlyStatement(accountNumber)).thenReturn(operations);
+
+        mockMvc.perform(get("/accounts/{accountNumber}/statement", accountNumber))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(operations.size()));
+
+        verify(accountService, times(1)).getMonthlyStatement(accountNumber);
+    }
 }

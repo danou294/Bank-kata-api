@@ -1,20 +1,26 @@
-package com.example.bankkata.domain.adapter;
+package com.example.bankkata.adapter;
 
-import com.example.bankkata.domain.model.LivretEpargne;
+import com.example.bankkata.domain.adapter.LivretEpargneController;
 import com.example.bankkata.domain.service.LivretEpargne.LivretEpargneService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class LivretEpargneControllerTest {
+
+    private MockMvc mockMvc;
 
     @Mock
     private LivretEpargneService livretEpargneService;
@@ -24,53 +30,35 @@ public class LivretEpargneControllerTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(livretEpargneController).build();
     }
 
     @Test
-    void createLivretEpargne_ShouldReturnCreatedLivretEpargne() {
-        double plafondDepot = 1000.0;
-        LivretEpargne livretEpargne = new LivretEpargne(plafondDepot);
-        when(livretEpargneService.createLivretEpargne(anyDouble())).thenReturn(livretEpargne);
+    void testDeposit() throws Exception {
+        String accountNumber = "1";
+        double amount = 100.0;
 
-        ResponseEntity<LivretEpargne> responseEntity = livretEpargneController.createLivretEpargne(plafondDepot);
+        mockMvc.perform(post("/livret-epargne/{accountNumber}/deposit", accountNumber)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(String.valueOf(amount)))
+                .andExpect(status().isOk());
 
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertEquals(livretEpargne, responseEntity.getBody());
+        verify(livretEpargneService).deposit(accountNumber, amount);
     }
 
     @Test
-    void getLivretEpargneById_ExistingId_ShouldReturnLivretEpargne() {
-        long existingLivretEpargneId = 1L;
-        LivretEpargne livretEpargne = new LivretEpargne(2000.0);
-        when(livretEpargneService.getLivretEpargneById(existingLivretEpargneId)).thenReturn(livretEpargne);
+    void testGetBalance() throws Exception {
+        String accountNumber = "1";
+        double expectedBalance = 100.0;
 
-        ResponseEntity<LivretEpargne> responseEntity = livretEpargneController.getLivretEpargneById(existingLivretEpargneId);
+        when(livretEpargneService.getBalance(accountNumber)).thenReturn(expectedBalance);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(livretEpargne, responseEntity.getBody());
-    }
+        mockMvc.perform(get("/livret-epargne/{accountNumber}/balance", accountNumber)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedBalance)));
 
-    @Test
-    void updatePlafondDepot_ExistingId_ShouldReturnUpdatedLivretEpargne() {
-        long existingLivretEpargneId = 1L;
-        double nouveauPlafond = 3000.0;
-        LivretEpargne livretEpargne = new LivretEpargne(2000.0);
-        when(livretEpargneService.updatePlafondDepot(existingLivretEpargneId, nouveauPlafond)).thenReturn(livretEpargne);
-
-        ResponseEntity<LivretEpargne> responseEntity = livretEpargneController.updatePlafondDepot(existingLivretEpargneId, nouveauPlafond);
-
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(livretEpargne, responseEntity.getBody());
-    }
-
-    @Test
-    void deleteLivretEpargne_ExistingId_ShouldReturnNoContent() {
-        long existingLivretEpargneId = 1L;
-
-        ResponseEntity<Void> responseEntity = livretEpargneController.deleteLivretEpargne(existingLivretEpargneId);
-
-        assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
-        verify(livretEpargneService, times(1)).deleteLivretEpargne(existingLivretEpargneId);
+        verify(livretEpargneService).getBalance(accountNumber);
     }
 }

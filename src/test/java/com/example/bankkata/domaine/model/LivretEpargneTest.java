@@ -1,49 +1,71 @@
-package com.example.bankkata.domain.model;
+package com.example.bankkata.domaine.model;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.example.bankkata.domain.exceptions.InsufficientFundsException;
+import com.example.bankkata.domain.model.LivretEpargne;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LivretEpargneTest {
 
-    private LivretEpargne livretEpargne;
-
-    @BeforeEach
-    void setUp() {
-        livretEpargne = new LivretEpargne(1000.0); // Plafond de dépôt de 1000 euros
+    @Test
+    public void testCreateLivretEpargne() {
+        LivretEpargne livretEpargne = new LivretEpargne(100.0, 200.0);
+        assertNotNull(livretEpargne);
+        assertEquals(100.0, livretEpargne.getBalance(), 0.01);
+        assertEquals(200.0, livretEpargne.getDepositCeiling(), 0.01);
+        assertFalse(livretEpargne.isAutorisationDecouvert());
+        assertEquals(0.0, livretEpargne.getMontantAutoriseDecouvert(), 0.01);
     }
 
     @Test
-    void deposer_ValidAmount_DepositSuccessful() {
-        livretEpargne.deposer(500.0);
-        assertEquals(500.0, livretEpargne.getSolde());
+    public void testDeposit() {
+        LivretEpargne livretEpargne = new LivretEpargne(100.0, 200.0);
+        livretEpargne.deposit(50.0);
+        assertEquals(150.0, livretEpargne.getBalance(), 0.01);
+
+        assertEquals(1, livretEpargne.getOperations().size());
+        assertEquals("DEPOSIT", livretEpargne.getOperations().get(0).getType());
+        assertEquals(50.0, livretEpargne.getOperations().get(0).getAmount(), 0.01);
+        assertEquals(150.0, livretEpargne.getOperations().get(0).getBalanceAfterOperation(), 0.01);
     }
 
     @Test
-    void deposer_NegativeAmount_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> livretEpargne.deposer(-100.0));
+    public void testDepositExceedsCeiling() {
+        LivretEpargne livretEpargne = new LivretEpargne(180.0, 200.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            livretEpargne.deposit(50.0);
+        });
     }
 
     @Test
-    void deposer_ExceedPlafond_DepositFails() {
-        assertThrows(IllegalArgumentException.class, () -> livretEpargne.deposer(1500.0));
+    public void testWithdraw() {
+        LivretEpargne livretEpargne = new LivretEpargne(100.0, 200.0);
+        livretEpargne.withdraw(50.0);
+        assertEquals(50.0, livretEpargne.getBalance(), 0.01);
+
+        assertEquals(1, livretEpargne.getOperations().size());
+        assertEquals("WITHDRAW", livretEpargne.getOperations().get(0).getType());
+        assertEquals(50.0, livretEpargne.getOperations().get(0).getAmount(), 0.01);
+        assertEquals(50.0, livretEpargne.getOperations().get(0).getBalanceAfterOperation(), 0.01);
     }
 
     @Test
-    void retirer_ValidAmount_WithdrawalSuccessful() {
-        livretEpargne.deposer(800.0);
-        livretEpargne.retirer(300.0);
-        assertEquals(500.0, livretEpargne.getSolde());
+    public void testWithdrawInsufficientFunds() {
+        LivretEpargne livretEpargne = new LivretEpargne(100.0, 200.0);
+        assertThrows(InsufficientFundsException.class, () -> {
+            livretEpargne.withdraw(150.0);
+        });
+
+        assertEquals(0, livretEpargne.getOperations().size());
     }
 
     @Test
-    void retirer_NegativeAmount_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> livretEpargne.retirer(-100.0));
-    }
+    public void testNoOverdraftAllowed() {
+        LivretEpargne livretEpargne = new LivretEpargne(100.0, 200.0);
+        assertThrows(InsufficientFundsException.class, () -> {
+            livretEpargne.withdraw(130.0);
+        });
 
-    @Test
-    void retirer_InsufficientFunds_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> livretEpargne.retirer(600.0));
+        assertEquals(0, livretEpargne.getOperations().size());
     }
 }

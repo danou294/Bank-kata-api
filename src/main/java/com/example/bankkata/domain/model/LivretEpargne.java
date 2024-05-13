@@ -1,48 +1,33 @@
 package com.example.bankkata.domain.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import lombok.Getter;
+import lombok.Setter;
 
-
-@Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 @Entity
-@Table(name = "livret_epargne")
-public class LivretEpargne {
+public class LivretEpargne extends Account {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
-    @Setter
-    private Long id;
+    private double depositCeiling;
 
-    private double plafondDepot;
-
-    private double solde;
-
-    public LivretEpargne(double plafondDepot) {
-        this.plafondDepot = plafondDepot;
-        this.solde = 0.0;
+    public LivretEpargne() {
+        super();
     }
 
-    public void deposer(double montant) {
-        if (montant <= 0) {
-            throw new IllegalArgumentException("Le montant du dépôt doit être positif");
-        }
-        if (solde + montant > plafondDepot) {
-            throw new IllegalArgumentException("Dépassement du plafond de dépôt");
-        }
-        solde += montant;
+    public LivretEpargne(double initialBalance, double depositCeiling) {
+        super(initialBalance, false, 0.0); // Pas de découvert autorisé
+        this.depositCeiling = depositCeiling;
     }
 
-    public void retirer(double montant) {
-        if (montant <= 0) {
-            throw new IllegalArgumentException("Le montant du retrait doit être positif");
+    @Override
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be positive.");
         }
-        if (solde - montant < 0) {
-            throw new IllegalArgumentException("Solde insuffisant");
+        if (this.getBalance() + amount > depositCeiling) {
+            throw new IllegalArgumentException("Deposit exceeds the account ceiling.");
         }
-        solde -= montant;
+        super.deposit(amount);
     }
 }

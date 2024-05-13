@@ -1,22 +1,24 @@
 package com.example.bankkata.domain.model;
 
 import com.example.bankkata.domain.exceptions.InsufficientFundsException;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+@Setter
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED, force = true)
 public class Account {
 
+    @Getter
     @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +29,9 @@ public class Account {
     private boolean autorisationDecouvert;
 
     private double montantAutoriseDecouvert;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Operation> operations = new ArrayList<>();
 
     public Account(double balance, boolean autorisationDecouvert, double montantAutoriseDecouvert) {
         if (balance < 0) {
@@ -47,6 +52,7 @@ public class Account {
             throw new IllegalArgumentException("Deposit amount must be positive");
         }
         this.balance += amount;
+        operations.add(new Operation(LocalDateTime.now(), "DEPOSIT", amount, balance));
     }
 
     public void withdraw(double amount) {
@@ -54,18 +60,11 @@ public class Account {
             throw new IllegalArgumentException("Withdrawal amount must be positive");
         }
 
-        System.out.println("Current balance: " + balance);
-        System.out.println("Requested amount: " + amount);
-
         if (balance >= amount) {
             balance -= amount;
         } else {
-            System.out.println("Insufficient balance");
-
             if (autorisationDecouvert) {
                 double montantTotalDisponible = balance + montantAutoriseDecouvert;
-                System.out.println("Total available amount (balance + authorized overdraft): " + montantTotalDisponible);
-
                 if (montantTotalDisponible >= amount) {
                     balance -= amount;
                 } else {
@@ -75,5 +74,10 @@ public class Account {
                 throw new InsufficientFundsException("Insufficient funds for withdrawal");
             }
         }
+        operations.add(new Operation(LocalDateTime.now(), "WITHDRAW", amount, balance));
+    }
+
+    public List<Operation> getOperations() {
+        return operations;
     }
 }

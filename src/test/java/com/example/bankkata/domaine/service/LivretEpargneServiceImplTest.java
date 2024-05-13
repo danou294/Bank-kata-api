@@ -3,17 +3,17 @@ package com.example.bankkata.domaine.service;
 import com.example.bankkata.domain.model.LivretEpargne;
 import com.example.bankkata.domain.port.LivretEpargneRepository;
 import com.example.bankkata.domain.service.LivretEpargne.LivretEpargneServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 public class LivretEpargneServiceImplTest {
 
     @Mock
@@ -22,79 +22,63 @@ public class LivretEpargneServiceImplTest {
     @InjectMocks
     private LivretEpargneServiceImpl livretEpargneService;
 
-    @Test
-    void createLivretEpargne_ShouldReturnLivretEpargne() {
-        // Given
-        double plafondDepot = 1000.0;
-        LivretEpargne livretEpargne = new LivretEpargne(plafondDepot);
-        when(livretEpargneRepository.save(any(LivretEpargne.class))).thenReturn(livretEpargne);
-
-        // When
-        LivretEpargne createdLivretEpargne = livretEpargneService.createLivretEpargne(plafondDepot);
-
-        // Then
-        assertNotNull(createdLivretEpargne);
-        assertEquals(plafondDepot, createdLivretEpargne.getPlafondDepot());
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void getLivretEpargneById_NonExistingId_ShouldReturnNull() {
-        // Given
-        long nonExistingLivretEpargneId = 999L;
-        when(livretEpargneRepository.findById(nonExistingLivretEpargneId)).thenReturn(Optional.empty());
+    void deposit_ShouldIncreaseBalance() {
+        String accountNumber = "1";
+        double initialAmount = 100.0;
+        double depositAmount = 50.0;
+        double depositCeiling = 200.0;
 
-        // When
-        LivretEpargne fetchedLivretEpargne = livretEpargneService.getLivretEpargneById(nonExistingLivretEpargneId);
+        LivretEpargne livretEpargne = new LivretEpargne(initialAmount, depositCeiling);
 
-        // Then
-        assertNull(fetchedLivretEpargne, "Le livret d'épargne récupéré devrait être null");
+        when(livretEpargneRepository.findByAccountId(Long.valueOf(accountNumber))).thenReturn(Optional.of(livretEpargne));
+
+        // Débogage : Afficher le solde initial
+        System.out.println("Solde initial avant dépôt : " + livretEpargne.getBalance());
+
+        livretEpargneService.deposit(accountNumber, depositAmount);
+
+        // Débogage : Afficher le solde après dépôt
+        System.out.println("Solde après dépôt : " + livretEpargne.getBalance());
+
+        assertEquals(initialAmount + depositAmount, livretEpargne.getBalance(), "Le solde doit augmenter après un dépôt.");
     }
 
     @Test
-    void updatePlafondDepot_ExistingId_ShouldReturnUpdatedLivretEpargne() {
-        // Given
-        long livretEpargneId = 1L;
-        double nouveauPlafond = 3000.0;
-        LivretEpargne livretEpargne = new LivretEpargne(2000.0);
-        when(livretEpargneRepository.findById(livretEpargneId)).thenReturn(Optional.of(livretEpargne));
-        when(livretEpargneRepository.save(any(LivretEpargne.class))).thenReturn(livretEpargne);
+    void deposit_ShouldThrowException_WhenExceedsMaxBalance() {
+        String accountNumber = "1";
+        double initialAmount = 150.0;
+        double depositAmount = 100.0;
+        double depositCeiling = 200.0;
 
-        // When
-        LivretEpargne updatedLivretEpargne = livretEpargneService.updatePlafondDepot(livretEpargneId, nouveauPlafond);
+        LivretEpargne livretEpargne = new LivretEpargne(initialAmount, depositCeiling);
 
-        // Then
-        assertNotNull(updatedLivretEpargne);
-        assertEquals(nouveauPlafond, updatedLivretEpargne.getPlafondDepot());
-    }
+        when(livretEpargneRepository.findByAccountId(Long.valueOf(accountNumber))).thenReturn(Optional.of(livretEpargne));
 
-    @Test
-    void deleteLivretEpargne_ExistingId_ShouldNotThrowException() {
-        // Given
-        long livretEpargneId = 1L;
-
-        // No need to mock repository behavior for delete operation
-
-        // When/Then
-        assertDoesNotThrow(() -> {
-            livretEpargneService.deleteLivretEpargne(livretEpargneId);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            livretEpargneService.deposit(accountNumber, depositAmount);
         });
+
+        assertEquals("Deposit exceeds the account ceiling.", exception.getMessage());
     }
 
     @Test
-    void getLivretEpargneById_ExistingId_ShouldReturnLivretEpargne() {
-        // Given
-        long existingLivretEpargneId = 1L;
-        LivretEpargne livretEpargne = new LivretEpargne(2000.0);
-        livretEpargne.setId(existingLivretEpargneId);
+    void getBalance_ShouldReturnCurrentBalance() {
+        String accountNumber = "1";
+        double initialAmount = 100.0;
+        double depositCeiling = 200.0;
 
-        // Configurer le comportement simulé du repository pour retourner le livret d'épargne créé
-        when(livretEpargneRepository.findById(existingLivretEpargneId)).thenReturn(Optional.of(livretEpargne));
+        LivretEpargne livretEpargne = new LivretEpargne(initialAmount, depositCeiling);
 
-        // When
-        LivretEpargne fetchedLivretEpargne = livretEpargneService.getLivretEpargneById(existingLivretEpargneId);
+        when(livretEpargneRepository.findByAccountId(Long.valueOf(accountNumber))).thenReturn(Optional.of(livretEpargne));
 
-        // Then
-        assertNotNull(fetchedLivretEpargne, "Le livret d'épargne récupéré ne devrait pas être null");
-        assertEquals(existingLivretEpargneId, fetchedLivretEpargne.getId(), "L'ID du livret d'épargne récupéré devrait correspondre");
+        double balance = livretEpargneService.getBalance(accountNumber);
+
+        assertEquals(initialAmount, balance, "Le solde initial doit être retourné.");
     }
 }
